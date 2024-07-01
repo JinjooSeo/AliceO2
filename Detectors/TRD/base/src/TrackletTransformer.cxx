@@ -58,11 +58,36 @@ float TrackletTransformer::calculateDy(int detector, int slope, const PadPlane* 
   return calibratedDy;
 }
 
-float TrackletTransformer::calibrateX(double x) const
+float TrackletTransformer::calibrateX(int detector, double x) const
 {
-  // Hard-coded value will be replaced once t0 calibration is available from CCDB
-  float t0Correction = -0.279;
-  return x += t0Correction;
+  float t0 = mCalT0->getT0(detector);
+  float vDrift = mCalVdriftExB->getVdrift(detector);
+
+  //drift time corresponding to the center of the time bin
+  Double_t td = (getTimebin(detector,x) + .5)/10.; // [us]
+  // correction for t0
+  td -= t0;
+  // time bin corrected for t0
+  // TMath::Nint(3.5) = 4 and TMath::Nint(4.5) = 4
+  Double_t tmp = td*10; // 10 is samling frequency
+  //fLocalTimeBin = Char_t(TMath::Floor(tmp));
+  //if(tmp-fLocalTimeBin > .5) fLocalTimeBin++;
+  if(td < .2) return 0.;
+  // TRF rising time (fitted)
+  // It should be absorbed by the t0. For the moment t0 is 0 for simulations.
+  // A.Bercuci (Mar 26 2009)
+  td -= 0.189;
+
+  // apply fitted correction
+  Float_t t0Correction = td * vDrift; //+ (HasXcorr() ? GetXcorr(fLocalTimeBin) : 0.);
+  //if(x>0.&&x<.5*AliTRDgeometry::CamHght()+AliTRDgeometry::CdrHght()) SetInChamber();
+  std::cout << "x: " << x << " | "
+            << "t0: " << t0 << " | "
+            << "vDrift: " << vDrift << " | "
+            << "td: " << td << " | "
+            << "t0Correction: " << t0Correction << std::endl;
+
+  return x + t0Correction;
 }
 
 std::array<float, 3> TrackletTransformer::transformL2T(int detector, std::array<double, 3> point) const
@@ -107,7 +132,7 @@ CalibratedTracklet TrackletTransformer::transformTracklet(Tracklet64 tracklet, b
 
   float dy = calculateDy(detector, slope, padPlane);
 
-  float calibratedX = calibrateX(x);
+  float calibratedX = calibrateX(detector, x);
 
   // NOTE: Correction to y position based on x calibration NOT YET implemented. Need t0.
   if (trackingFrame) {

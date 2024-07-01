@@ -345,6 +345,8 @@ bool Digitizer::convertHits(const int det, const std::vector<Hit>& hits, SignalC
       const int firstTimeBin = std::max(timeBinTruncated, 0);
       const int lastTimeBin = std::min(timeBinTruncated + mTimeBinTRFend, mMaxTimeBins);
 
+      std::cout << timeBinTruncated << " " << firstTimeBin << " " << lastTimeBin << " " << t0 << " " << driftTime << " " << timeOffset << std::endl;
+
       // loop over pads first then over timebins for better cache friendliness
       // and less access to signalMapCont
       for (int pad = 0; pad < mNpad; ++pad) {

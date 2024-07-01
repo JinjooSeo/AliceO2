@@ -43,6 +43,17 @@ void Calibrations::getCCDBObjects(long timestamp)
   if (!mChamberCalibrations) {
     LOG(fatal) << "No chamber calibrations returned from CCDB for TRD calibrations";
   }
+
+  mT0 = ccdbmgr.get<o2::trd::CalT0>("TRD/Calib/CalT0");
+  if (!mChamberCalibrations) {
+    LOG(fatal) << "No T0 calibrations returned from CCDB for TRD calibrations";
+  }
+
+  mVdriftExB = ccdbmgr.get<o2::trd::CalVdriftExB>("TRD/Calib/CalVdriftExB");
+  if (!mChamberCalibrations) {
+    LOG(fatal) << "No Vdrift and ExB calibrations returned from CCDB for TRD calibrations";
+  }
+
   mLocalGainFactor = ccdbmgr.get<o2::trd::LocalGainFactor>("TRD/Calib/LocalGainFactor");
   if (!mLocalGainFactor) {
     LOG(fatal) << "No local gain factors returned from CCDB for TRD calibrations";
@@ -75,8 +86,8 @@ void Calibrations::setOnlineGainTables(std::string& tablename)
 
 float Calibrations::getVDrift(int det, int col, int row) const
 {
-  if (mChamberCalibrations) {
-    return mChamberCalibrations->getVDrift(det);
+  if (mVdriftExB) {
+    return mVdriftExB->getVdrift(det);
   } else {
     return -1;
   }
@@ -84,16 +95,16 @@ float Calibrations::getVDrift(int det, int col, int row) const
 
 float Calibrations::getT0(int det, int col, int row) const
 {
-  if (mChamberCalibrations) {
-    return mChamberCalibrations->getT0(det);
+  if (mT0) {
+    return mT0->getT0(det);
   } else {
     return -1;
   }
 }
 float Calibrations::getExB(int det) const
 {
-  if (mChamberCalibrations) {
-    return mChamberCalibrations->getExB(det);
+  if (mVdriftExB) {
+    return mVdriftExB->getExB(det);
   } else {
     return -1;
   }
