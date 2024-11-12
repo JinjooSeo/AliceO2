@@ -42,6 +42,8 @@
 #include "TRDBase/ChamberStatus.h"
 #include "TRDBase/PadCalibrationsAliases.h"
 #include "TRDBase/CalOnlineGainTables.h"
+#include "DataFormatsTRD/CalVdriftExB.h"
+#include "DataFormatsTRD/CalT0.h"
 
 namespace o2
 {
@@ -76,7 +78,11 @@ class Calibrations
  protected:
   long mTimeStamp; //run number of related to the current calibration.
 
+  float difference = 0.05; //difference between the two calibration values
+
   ChamberCalibrations* mChamberCalibrations; ///< from AliRoot: vDrift, T0, ExB and Gain for each chamber
+  CalVdriftExB* mVdriftExB;                  ///< drift velocity and ExB factor per chamber
+  CalT0* mT0;                                ///< T0 per chamber
   LocalGainFactor* mLocalGainFactor;         ///< gain factor per readout pad
   PadNoise* mPadNoise;                       ///< noise value per readout pad
   ChamberStatus* mChamberStatus;             ///< status flag for each chamber

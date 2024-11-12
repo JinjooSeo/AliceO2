@@ -132,6 +132,7 @@ void TRDTrackletTransformerSpec::updateTimeDependentParams(ProcessingContext& pc
     mTransformer.init();
   }
   pc.inputs().get<o2::trd::CalVdriftExB*>("calvdexb"); // just to trigger the finaliseCCDB
+  pc.inputs().get<o2::trd::CalT0*>("calt0");           // just to trigger the finaliseCCDB
 }
 
 void TRDTrackletTransformerSpec::finaliseCCDB(ConcreteDataMatcher& matcher, void* obj)
@@ -142,8 +143,12 @@ void TRDTrackletTransformerSpec::finaliseCCDB(ConcreteDataMatcher& matcher, void
   if (matcher == ConcreteDataMatcher("TRD", "CALVDRIFTEXB", 0)) {
     LOG(info) << "CalVdriftExB object has been updated";
     mTransformer.setCalVdriftExB((const o2::trd::CalVdriftExB*)obj);
-    return;
   }
+  if (matcher == ConcreteDataMatcher("TRD", "CALT0", 0)) {
+    LOG(info) << "Local t0 object has been updated";
+    mTransformer.setCalT0((const o2::trd::CalT0*)obj);
+  }
+  return;
 }
 
 o2::framework::DataProcessorSpec getTRDTrackletTransformerSpec(bool trigRecFilterActive)
@@ -156,6 +161,7 @@ o2::framework::DataProcessorSpec getTRDTrackletTransformerSpec(bool trigRecFilte
   inputs.emplace_back("trdtracklets", "TRD", "TRACKLETS", 0, Lifetime::Timeframe);
   inputs.emplace_back("trdtriggerrec", "TRD", "TRKTRGRD", 0, Lifetime::Timeframe);
   inputs.emplace_back("calvdexb", "TRD", "CALVDRIFTEXB", 0, Lifetime::Condition, ccdbParamSpec("TRD/Calib/CalVdriftExB"));
+  inputs.emplace_back("calt0", "TRD", "CALT0", 0, Lifetime::Condition, ccdbParamSpec("TRD/Calib/CalT0"));
   auto ggRequest = std::make_shared<o2::base::GRPGeomRequest>(false,                             // orbitResetTime
                                                               false,                             // GRPECS=true
                                                               false,                             // GRPLHCIF

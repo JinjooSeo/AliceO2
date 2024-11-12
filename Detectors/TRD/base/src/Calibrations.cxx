@@ -43,6 +43,17 @@ void Calibrations::getCCDBObjects(long timestamp)
   if (!mChamberCalibrations) {
     LOG(fatal) << "No chamber calibrations returned from CCDB for TRD calibrations";
   }
+  
+  mT0 = ccdbmgr.get<o2::trd::CalT0>("TRD/Calib/CalT0");
+  if (!mT0) {
+    LOG(fatal) << "No T0 calibrations returned from CCDB for TRD calibrations";
+  }
+
+  mVdriftExB = ccdbmgr.get<o2::trd::CalVdriftExB>("TRD/Calib/CalVdriftExB");
+  if (!mVdriftExB) {
+    LOG(fatal) << "No Vdrift and ExB calibrations returned from CCDB for TRD calibrations";
+  }
+
   mLocalGainFactor = ccdbmgr.get<o2::trd::LocalGainFactor>("TRD/Calib/LocalGainFactor");
   if (!mLocalGainFactor) {
     LOG(fatal) << "No local gain factors returned from CCDB for TRD calibrations";
@@ -75,29 +86,73 @@ void Calibrations::setOnlineGainTables(std::string& tablename)
 
 float Calibrations::getVDrift(int det, int col, int row) const
 {
-  if (mChamberCalibrations) {
-    return mChamberCalibrations->getVDrift(det);
+  if (mVdriftExB) {
+    // if the VDrift from mVdriftExB is different from mChamberCalibrations
+    // by about 5% (default), then we use mChamberCalibrations
+    float vdrift = mVdriftExB->getVDrift(det);
+    float vdriftch = mChamberCalibrations->getVDrift(det);
+    if (TMath::Abs(vdrift - vdriftch) > difference * vdrift) {
+      LOGF(info, "VDrift from Run3 calibration (%f) is different from Run2 value (%f) by about %f%%, using Run2 value", vdrift, vdriftch, difference);
+      return vdriftch;
+    } else {
+      LOGF(info, "VDrift from Run3 calibration (%f) is within %f%% of Run2 value (%f)", vdrift, vdriftch, difference);
+      return vdrift;
+    }
   } else {
-    return -1;
+    if (mChamberCalibrations) {
+      return mChamberCalibrations->getVDrift(det);
+    } else {
+      return -1;
+    }
   }
 }
 
 float Calibrations::getT0(int det, int col, int row) const
 {
-  if (mChamberCalibrations) {
-    return mChamberCalibrations->getT0(det);
+  if (mT0) {
+    // if the T0 from mT0 is different from mChamberCalibrations
+    // by about 5% (default), then we use mChamberCalibrations
+    float t0 = mT0->getT0(det);
+    float t0ch = mChamberCalibrations->getT0(det);
+    if (TMath::Abs(t0 - t0ch) > difference * t0) {
+      LOGF(info, "T0 from Run3 calibration (%f) is different from Run2 value (%f) by about %f%%, using Run2 value", t0, t0ch, difference);
+      return t0ch;
+    } else {
+      LOGF(info, "T0 from Run3 calibaration (%f) is within %f%% of Run2 value (%f)", t0, t0ch, difference);
+      return mT0->getT0(det);
+    }
   } else {
-    return -1;
+    if (mChamberCalibrations) {
+      return mChamberCalibrations->getT0(det);
+    } else {
+      return -1;
+    }
   }
 }
+
 float Calibrations::getExB(int det) const
 {
-  if (mChamberCalibrations) {
-    return mChamberCalibrations->getExB(det);
+  if (mVdriftExB) {
+    // if the ExB from mVdriftExB is different from mChamberCalibrations
+    // by about 5% (default), then we use mChamberCalibrations
+    float exb = mVdriftExB->getExB(det);
+    float exbch = mChamberCalibrations->getExB(det);
+    if (TMath::Abs(exb - exbch) > difference * exb) {
+      LOGF(info, "ExB from Run3 calibration (%f) is different from Run2 value (%f) by about %f%%, using Run2 value", exb, exbch, difference);
+      return exbch;
+    } else {
+      LOGF(info, "ExB from Run3 calibration (%f) is within %f%% of Run2 value (%f)", exb, exbch, difference);
+      return exb;
+    }
   } else {
-    return -1;
+    if (mChamberCalibrations) {
+      return mChamberCalibrations->getExB(det);
+    } else {
+      return -1;
+    }
   }
 }
+
 float Calibrations::getGainFactor(int det, int col, int row) const
 {
   if (mChamberCalibrations && mLocalGainFactor) {
@@ -106,6 +161,7 @@ float Calibrations::getGainFactor(int det, int col, int row) const
     return -1;
   }
 }
+
 float Calibrations::getPadGainFactor(int det, int col, int row) const
 {
   if (mLocalGainFactor) {
